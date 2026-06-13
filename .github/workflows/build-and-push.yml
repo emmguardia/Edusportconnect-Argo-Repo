@@ -151,7 +151,7 @@ jobs:
 
       # Étape 1 : build local pour le scan Trivy (pas de push)
       - name: Build frontend (local — pour scan Trivy)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./Frontend
           load: true
@@ -171,7 +171,7 @@ jobs:
       # Étape 3 : push uniquement si le scan est clean
       - name: Push frontend
         id: build-frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./Frontend
           push: true
