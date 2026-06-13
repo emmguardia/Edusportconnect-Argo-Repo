@@ -3,6 +3,10 @@ kind: IngressRoute
 metadata:
   name: edusport-connect-ingress
   namespace: {{ include "esc.namespace" . }}
+  annotations:
+    # Appliqué APRÈS les middlewares (sync-wave supérieure) → la route ne référence
+    # jamais un middleware encore absent.
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     {{- include "esc.labels" . | nindent 4 }}
 spec:

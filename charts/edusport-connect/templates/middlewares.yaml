@@ -3,6 +3,11 @@ kind: Middleware
 metadata:
   name: security-headers
   namespace: {{ include "esc.namespace" . }}
+  annotations:
+    # Appliqué AVANT l'IngressRoute (sync-wave inférieure) pour que le middleware
+    # existe toujours quand Traefik enregistre la route → évite la race condition
+    # "middleware does not exist" au déploiement.
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     {{- include "esc.labels" . | nindent 4 }}
 spec:
