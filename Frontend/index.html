@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A2342" />
+
     <!-- Google Fonts : Poppins (géométrique, sans-serif). preconnect + stylesheet
          pour déclencher le téléchargement en parallèle du bundle JS et éviter le FOUC. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,18 +14,57 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
     />
+
+    <!-- ── SEO ───────────────────────────────────────────────────────────── -->
     <title>ÉduSport Connect — Accompagner les jeunes par le sport, l'éducation et le numérique</title>
     <meta
       name="description"
-      content="ÉduSport Connect est une association engagée pour accompagner les jeunes dans leur développement personnel, éducatif et citoyen, à travers le sport, l'éducation et le numérique."
+      content="ÉduSport Connect est une association engagée pour accompagner les jeunes dans leur développement personnel, éducatif et citoyen, à travers le sport, l'éducation, le numérique, les droits humains et la mobilité internationale."
     />
+    <meta name="keywords" content="association jeunesse, sport éducatif, éducation, numérique, droits humains, mobilité internationale, bénévolat, inclusion, Mâcon" />
+    <meta name="author" content="ÉduSport Connect" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://edusportconnect.fr/" />
+
+    <!-- Open Graph (Facebook, LinkedIn…) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="ÉduSport Connect" />
+    <meta property="og:site_name" content="ÉduSport Connect" />
+    <meta property="og:url" content="https://edusportconnect.fr/" />
+    <meta property="og:title" content="ÉduSport Connect — Accompagner les jeunes par le sport, l'éducation et le numérique" />
     <meta
       property="og:description"
       content="Un projet éducatif, citoyen, ouvert sur le monde et tourné vers l'avenir."
     />
     <meta property="og:locale" content="fr_FR" />
+    <meta property="og:image" content="https://edusportconnect.fr/images/og-cover.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Des jeunes réunis, bras sur les épaules, face à un terrain de sport" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ÉduSport Connect" />
+    <meta name="twitter:description" content="Un projet éducatif, citoyen, ouvert sur le monde et tourné vers l'avenir." />
+    <meta name="twitter:image" content="https://edusportconnect.fr/images/og-cover.jpg" />
+
+    <!-- Données structurées (Schema.org) — association à but non lucratif -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NGO",
+        "name": "ÉduSport Connect",
+        "url": "https://edusportconnect.fr/",
+        "logo": "https://edusportconnect.fr/favicon.svg",
+        "description": "Association engagée pour accompagner les jeunes dans leur développement personnel, éducatif et citoyen, à travers le sport, l'éducation, le numérique, les droits humains et la mobilité internationale.",
+        "email": "contact@edusportconnect.fr",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Mâcon",
+          "addressCountry": "FR"
+        },
+        "areaServed": "FR"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
