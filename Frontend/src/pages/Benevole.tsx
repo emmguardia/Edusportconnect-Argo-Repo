@@ -1,4 +1,5 @@
-import { HeartHandshake, Sparkles, GraduationCap, type LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { HeartHandshake, Sparkles, GraduationCap, ArrowRight, type LucideIcon } from 'lucide-react';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
 
@@ -63,15 +64,21 @@ export default function Benevole() {
             ))}
           </div>
 
-          {/* Bénévole ou partenaire */}
+          {/* Renvoi vers la page partenaires */}
           <div className="mx-auto mt-14 max-w-3xl rounded-2xl bg-cloud p-7 text-center sm:p-9">
-            <h3 className="text-xl font-bold text-navy">Bénévole ou partenaire&nbsp;?</h3>
+            <h3 className="text-xl font-bold text-navy">Vous représentez une structure&nbsp;?</h3>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
-              Vous souhaitez donner de votre temps en tant que bénévole, ou
-              soutenir nos actions en tant que partenaire (structure, entreprise,
-              collectivité)&nbsp;? Dans les deux cas, utilisez le formulaire
-              ci-dessous&nbsp;: nous reviendrons vers vous rapidement.
+              Entreprises, collectivités et associations peuvent elles aussi
+              soutenir nos actions. Découvrez les différentes façons de nous
+              accompagner.
             </p>
+            <Link
+              to="/partenaires"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-navy/15 bg-white px-6 py-3 text-sm font-semibold text-navy transition-all duration-300 hover:border-navy/30 hover:-translate-y-0.5"
+            >
+              Devenir partenaire
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

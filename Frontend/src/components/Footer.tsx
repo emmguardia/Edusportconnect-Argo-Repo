@@ -8,6 +8,7 @@ const FOOTER_NAV = [
   { to: '/notre-histoire', label: 'Notre Histoire' },
   { to: '/evenements', label: 'Événements' },
   { to: '/benevole', label: 'Devenir bénévole' },
+  { to: '/partenaires', label: 'Devenir partenaire' },
   { to: '/faq', label: 'FAQ' },
 ];
 

@@ -61,7 +61,7 @@ export default function Header() {
 
           {/* Bouton d'action (desktop) */}
           <Link
-            to="/benevole"
+            to="/partenaires"
             className="hidden items-center gap-2 rounded-xl bg-orange px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-orange-bright hover:shadow-md hover:-translate-y-0.5 lg:inline-flex"
           >
             <Handshake className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function Header() {
               ))}
             </nav>
             <Link
-              to="/benevole"
+              to="/partenaires"
               onClick={() => setMenuOpen(false)}
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange px-5 py-3 text-sm font-semibold text-white"
             >

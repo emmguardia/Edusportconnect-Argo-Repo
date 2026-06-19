@@ -41,7 +41,7 @@ export default function Hero() {
 
           <div className="animate-fade-up-3 mt-9 flex flex-wrap items-center gap-4">
             <Link
-              to="/benevole"
+              to="/partenaires"
               className="inline-flex items-center gap-3 rounded-xl bg-orange px-7 py-4 text-base font-semibold text-white shadow-lg shadow-orange/25 transition-all duration-300 hover:bg-orange-bright hover:shadow-xl hover:-translate-y-0.5"
             >
               <Handshake className="h-5 w-5" />

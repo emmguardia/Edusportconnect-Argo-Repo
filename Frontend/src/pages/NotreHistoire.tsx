@@ -251,7 +251,7 @@ export default function NotreHistoire() {
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/benevole"
+              to="/partenaires"
               className="inline-flex items-center gap-3 rounded-xl bg-orange px-8 py-4 text-base font-semibold text-white shadow-lg shadow-black/20 transition-all duration-300 hover:bg-orange-bright hover:shadow-xl hover:-translate-y-0.5"
             >
               <Handshake className="h-5 w-5" />

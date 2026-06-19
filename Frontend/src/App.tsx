@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import NotreHistoire from './pages/NotreHistoire';
 import Evenements from './pages/Evenements';
 import Benevole from './pages/Benevole';
+import Partenaires from './pages/Partenaires';
 import Faq from './pages/Faq';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/notre-histoire" element={<NotreHistoire />} />
           <Route path="/evenements" element={<Evenements />} />
           <Route path="/benevole" element={<Benevole />} />
+          <Route path="/partenaires" element={<Partenaires />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/politique-de-confidentialite" element={<PolitiqueConfidentialite />} />
