@@ -20,7 +20,7 @@ ingress:
 
 # ── Frontend (nginx) ──────────────────────────────────────────────────────────
 frontend:
-  image: ghcr.io/emmguardia/edusport-connect-front@sha256:19ba8ce74d26b2f12323bef96afc028c8f051fe49a170035ea82487f632743d0
+  image: ghcr.io/emmguardia/edusport-connect-front@sha256:4bfe73b705ba3acc6fc207648d4b7ea35b37e224824caa00fcec39a277dd82db
   imagePullPolicy: IfNotPresent
   replicas: 1
   strategy:
