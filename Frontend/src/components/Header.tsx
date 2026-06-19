@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X, Handshake } from 'lucide-react';
+import { Link, NavLink } from 'react-router-dom';
 import Logo from './Logo';
 
-const NAV_LINKS = [
-  { id: 'accueil', label: 'Accueil' },
-  { id: 'a-propos', label: 'À propos' },
-  { id: 'nos-actions', label: 'Nos actions' },
-  { id: 'benevole', label: 'Devenir bénévole' },
-  { id: 'contact', label: 'Contact' },
+const NAV_LINKS: { to: string; label: string; end?: boolean }[] = [
+  { to: '/', label: 'Accueil', end: true },
+  { to: '/notre-histoire', label: 'Notre Histoire' },
+  { to: '/evenements', label: 'Événements' },
+  { to: '/benevole', label: 'Devenir bénévole' },
+  { to: '/faq', label: 'FAQ' },
 ];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [active, setActive] = useState('accueil');
 
   // Ombre + fond plus opaque dès qu'on quitte le haut de page
   useEffect(() => {
@@ -21,26 +21,6 @@ export default function Header() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Soulignement orange sur la section visible (scroll spy)
-  useEffect(() => {
-    const sections = NAV_LINKS
-      .map((l) => document.getElementById(l.id))
-      .filter((el): el is HTMLElement => el !== null);
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: '-45% 0px -50% 0px', threshold: [0, 0.25, 0.5, 1] }
-    );
-
-    sections.forEach((s) => observer.observe(s));
-    return () => observer.disconnect();
   }, []);
 
   return (
@@ -52,36 +32,41 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <a href="#accueil" aria-label="ÉduSport Connect — accueil">
+          <Link to="/" aria-label="ÉduSport Connect — accueil">
             <Logo variant="dark" markSize={46} />
-          </a>
+          </Link>
 
           {/* Navigation centrale (desktop) */}
-          <nav className="hidden items-center gap-9 lg:flex">
+          <nav className="hidden items-center gap-7 lg:flex">
             {NAV_LINKS.map((link) => (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
                 className="group relative text-[0.95rem] font-medium text-navy/85 transition-colors hover:text-navy"
               >
-                {link.label}
-                <span
-                  className={`absolute -bottom-1.5 left-0 h-[2.5px] rounded-full bg-orange transition-all duration-300 ${
-                    active === link.id ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`}
-                />
-              </a>
+                {({ isActive }) => (
+                  <>
+                    {link.label}
+                    <span
+                      className={`absolute -bottom-1.5 left-0 h-[2.5px] rounded-full bg-orange transition-all duration-300 ${
+                        isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                      }`}
+                    />
+                  </>
+                )}
+              </NavLink>
             ))}
           </nav>
 
           {/* Bouton d'action (desktop) */}
-          <a
-            href="#benevole"
+          <Link
+            to="/benevole"
             className="hidden items-center gap-2 rounded-xl bg-orange px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-orange-bright hover:shadow-md hover:-translate-y-0.5 lg:inline-flex"
           >
-            Rejoindre le projet
-            <ArrowRight className="h-4 w-4" />
-          </a>
+            <Handshake className="h-4 w-4" />
+            Devenir partenaire
+          </Link>
 
           {/* Burger (mobile) */}
           <button
@@ -98,26 +83,29 @@ export default function Header() {
           <div className="border-t border-navy/5 pb-5 lg:hidden">
             <nav className="flex flex-col pt-2">
               {NAV_LINKS.map((link) => (
-                <a
-                  key={link.id}
-                  href={`#${link.id}`}
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
                   onClick={() => setMenuOpen(false)}
-                  className={`py-3 text-base font-medium transition-colors ${
-                    active === link.id ? 'text-orange' : 'text-navy/85 hover:text-navy'
-                  }`}
+                  className={({ isActive }) =>
+                    `py-3 text-base font-medium transition-colors ${
+                      isActive ? 'text-orange' : 'text-navy/85 hover:text-navy'
+                    }`
+                  }
                 >
                   {link.label}
-                </a>
+                </NavLink>
               ))}
             </nav>
-            <a
-              href="#benevole"
+            <Link
+              to="/benevole"
               onClick={() => setMenuOpen(false)}
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange px-5 py-3 text-sm font-semibold text-white"
             >
-              Rejoindre le projet
-              <ArrowRight className="h-4 w-4" />
-            </a>
+              <Handshake className="h-4 w-4" />
+              Devenir partenaire
+            </Link>
           </div>
         )}
       </div>

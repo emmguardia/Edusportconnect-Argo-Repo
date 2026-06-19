@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function CtaBanner() {
   return (
@@ -21,13 +22,13 @@ export default function CtaBanner() {
           En devenant bénévole, vous participez à une aventure humaine utile,
           enrichissante et porteuse de sens.
         </p>
-        <a
-          href="#contact"
+        <Link
+          to="/benevole"
           className="mt-9 inline-flex items-center gap-3 rounded-xl bg-orange px-8 py-4 text-base font-semibold text-white shadow-lg shadow-black/20 transition-all duration-300 hover:bg-orange-bright hover:shadow-xl hover:-translate-y-0.5"
         >
           Devenir bénévole
           <ArrowRight className="h-5 w-5" />
-        </a>
+        </Link>
       </div>
     </section>
   );
