@@ -14,3 +14,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- define "esc.frontend.selectorLabels" -}}
 app: edusport-connect-frontend
 {{- end -}}
+
+{{- define "esc.backend.selectorLabels" -}}
+app: edusport-connect-backend
+{{- end -}}

@@ -1,9 +1,6 @@
 # values.yaml — ÉduSport Connect (prod)
-# L'image frontend est mise à jour automatiquement par la CI (build-and-push.yml)
-# Format : ghcr.io/<owner>/edusport-connect-front@sha256:<digest>  (piqué par la CI)
-#
-# ⚠️ Frontend uniquement pour l'instant. Le backend sera ajouté plus tard
-#    (templates backend-* + sealed-secret + network-policy egress).
+# Les images sont mises à jour automatiquement par la CI (build-and-push.yml)
+# Format : ghcr.io/<owner>/<image>@sha256:<digest>  (piqué par la CI)
 
 namespace: edusport-connect
 
@@ -41,3 +38,23 @@ frontend:
     maxReplicas: 5
     cpuTarget: 70
     memoryTarget: 80
+
+# ── Backend (Node.js) ─────────────────────────────────────────────────────────
+backend:
+  # L'image sera pinnée par la CI après le premier build
+  image: ghcr.io/emmguardia/edusport-connect-back:latest
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  port: 3000
+  frontendUrl: https://edusportconnect.fr
+  adminNotificationEmail: contact@edusportconnect.fr
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+  uploads:
+    storageSize: "2Gi"
+    storageClass: ""   # laisser vide pour utiliser la StorageClass par défaut du cluster

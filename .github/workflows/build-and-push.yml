@@ -180,11 +180,49 @@ jobs:
           cache-from: type=gha
           pull: true
 
+      # ── Backend ──────────────────────────────────────────────────────────────
+      - name: Extract metadata (backend)
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/edusport-connect-back
+          tags: |
+            type=raw,value=${{ steps.tag.outputs.tag }}
+
+      - name: Build backend (local — pour scan Trivy)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          load: true
+          push: false
+          tags: scan-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          pull: true
+
+      - name: Trivy scan backend (avant push)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            ${{ env.TRIVY_IMAGE }} image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --format table \
+            scan-backend:latest
+
+      - name: Push backend
+        id: build-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          pull: true
+
       # ── Pin digest dans values.yaml → ArgoCD sync automatique ─────────────────
       - name: Pin Helm values to image digest
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           DIGEST_FRONTEND="${{ steps.build-frontend.outputs.digest }}"
+          DIGEST_BACKEND="${{ steps.build-backend.outputs.digest }}"
           OWNER="${{ github.repository_owner }}"
           REG="${{ env.REGISTRY }}"
 
@@ -194,9 +232,16 @@ jobs:
             FRONTEND_IMAGE="${REG}/${OWNER}/edusport-connect-front:${TAG}"
           fi
 
+          if [ -n "$DIGEST_BACKEND" ]; then
+            BACKEND_IMAGE="${REG}/${OWNER}/edusport-connect-back@${DIGEST_BACKEND}"
+          else
+            BACKEND_IMAGE="${REG}/${OWNER}/edusport-connect-back:${TAG}"
+          fi
+
           VALUES_PATH="charts/edusport-connect/values.yaml"
 
           sed -i "s|  image: ghcr.io/.*edusport-connect-front.*|  image: ${FRONTEND_IMAGE}|" "$VALUES_PATH"
+          sed -i "s|  image: ghcr.io/.*edusport-connect-back.*|  image: ${BACKEND_IMAGE}|" "$VALUES_PATH"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

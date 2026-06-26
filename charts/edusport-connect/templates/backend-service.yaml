@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edusport-connect-backend-service
+  namespace: {{ include "esc.namespace" . }}
+  labels:
+    {{- include "esc.labels" . | nindent 4 }}
+    {{- include "esc.backend.selectorLabels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "esc.backend.selectorLabels" . | nindent 4 }}
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: {{ .Values.backend.port }}

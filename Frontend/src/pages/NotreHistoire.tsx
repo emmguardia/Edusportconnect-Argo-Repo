@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
 import {
-  Info,
-  User,
   Quote,
   ArrowRight,
   Handshake,
@@ -60,36 +58,25 @@ export default function NotreHistoire() {
       />
 
       {/* ──────────────────────────────────────────────────────────────────
-          ⚠️ ENCADRÉ PROVISOIRE — supprimer ce bloc une fois le contenu rédigé.
-          Les paragraphes ci-dessous sont des exemples à remplacer par le récit
-          réel du fondateur.
-         ────────────────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
-        <div className="flex items-start gap-3 rounded-xl border border-dashed border-orange/60 bg-orange/5 px-5 py-4 text-sm text-navy/80">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-orange" />
-          <p>
-            <strong className="font-semibold text-navy">Texte provisoire.</strong>{' '}
-            Cette page propose une mise en page complète avec un contenu
-            d’exemple. Remplacez chaque paragraphe par votre récit, puis
-            supprimez cet encadré.
-          </p>
-        </div>
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────
           1. Le parcours du fondateur
          ────────────────────────────────────────────────────────────────── */}
       <section className="bg-white py-16 sm:py-20">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14 lg:px-8">
-          {/* Portrait (à remplacer par une vraie photo) */}
+          {/* Portrait */}
           <div className="mx-auto w-full max-w-xs">
-            <div className="flex aspect-square items-center justify-center rounded-2xl bg-cloud shadow-sm ring-1 ring-navy/5">
-              <User className="h-24 w-24 text-navy/20" strokeWidth={1.2} />
+            <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-navy/5">
+              <img
+                src="/images/Photo_President.webp"
+                alt="Ismaël FALETI, Fondateur et Président d’ÉduSport Connect"
+                className="w-full object-cover"
+                width={320}
+                height={400}
+              />
             </div>
             <p className="mt-4 text-center">
-              <span className="block font-semibold text-navy">[Nom du fondateur]</span>
+              <span className="block font-semibold text-navy">Ismaël FALETI</span>
               <span className="block text-sm text-slate-500">
-                Fondateur d’ÉduSport Connect
+                Fondateur et Président d’ÉduSport Connect
               </span>
             </p>
           </div>
@@ -104,18 +91,37 @@ export default function NotreHistoire() {
             </h2>
             <span className="mt-4 block h-1 w-12 rounded-full bg-orange" />
             <div className="mt-6 space-y-4 text-base leading-relaxed text-slate-600">
-              {/* TODO: remplacer par le vrai parcours du fondateur */}
               <p>
                 Mon engagement auprès de la jeunesse est né de mon propre
                 parcours. Entre le sport, l’éducation et le terrain associatif,
                 j’ai vu très tôt à quel point un accompagnement bienveillant
-                pouvait changer la trajectoire d’un jeune.
+                pouvait transformer la trajectoire d’un jeune et lui permettre
+                de révéler son potentiel.
               </p>
               <p>
-                De ces expériences est née une conviction simple&nbsp;: le
-                sport et l’éducation, lorsqu’ils sont reliés, ouvrent des
-                possibles. C’est cette conviction qui m’a poussé à créer
-                ÉduSport Connect.
+                Au fil de mes expériences, j’ai constaté que de nombreux jeunes
+                disposent de talents et d’ambitions, mais manquent parfois
+                d’information, de confiance ou d’opportunités pour avancer.
+                J’ai également observé que le sport, l’éducation et le numérique
+                constituent de puissants leviers d’émancipation lorsqu’ils sont
+                accessibles à tous.
+              </p>
+              <p>
+                De ces expériences est née une conviction simple&nbsp;: lorsque
+                l’éducation, le sport et la citoyenneté sont reliés, ils ouvrent
+                des perspectives durables et permettent aux jeunes de devenir
+                pleinement acteurs de leur avenir.
+              </p>
+              <p>
+                C’est cette conviction qui m’a conduit à créer ÉduSport Connect,
+                avec l’ambition de développer des projets favorisant l’inclusion,
+                l’engagement citoyen, l’accès aux opportunités et l’ouverture au monde.
+              </p>
+              <p>
+                Aujourd’hui, à travers ÉduSport Connect, je souhaite contribuer
+                à accompagner les jeunes dans leur parcours personnel, éducatif
+                et professionnel, tout en construisant des passerelles entre les
+                territoires, les cultures et les générations.
               </p>
             </div>
           </div>

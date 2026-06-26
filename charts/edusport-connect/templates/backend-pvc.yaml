@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: edusport-connect-uploads
+  namespace: {{ include "esc.namespace" . }}
+  labels:
+    {{- include "esc.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.backend.uploads.storageSize | default "2Gi" }}
+  {{- if .Values.backend.uploads.storageClass }}
+  storageClassName: {{ .Values.backend.uploads.storageClass }}
+  {{- end }}
