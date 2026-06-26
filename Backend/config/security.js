@@ -55,5 +55,8 @@ export function applySecurityMiddleware(app) {
   }));
 
   app.use(compression());
-  app.use('/api/', globalLimiter);
+  app.use('/api/', (req, res, next) => {
+    if (req.path === '/health') return next();
+    return globalLimiter(req, res, next);
+  });
 }
