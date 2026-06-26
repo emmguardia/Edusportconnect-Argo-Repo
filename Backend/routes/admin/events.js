@@ -14,7 +14,7 @@ import { unlink } from 'fs/promises';
 import path from 'path';
 import { getPool } from '../../config/database.js';
 import { requireAdmin } from '../../middleware/auth.js';
-import { uploadEvent } from '../../config/upload.js';
+import { runUpload } from '../../config/upload.js';
 
 const router = Router();
 router.use(requireAdmin);
@@ -80,87 +80,90 @@ router.get('/:id', async (req, res) => {
 });
 
 /* ── POST /api/admin/events ─────────────────────────────────────────── */
-router.post('/', (req, res) => {
-  uploadEvent(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+router.post('/', async (req, res) => {
+  try {
+    await runUpload(req, res);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 
-    const parsed = eventSchema.safeParse(req.body);
-    if (!parsed.success) {
-      if (req.file) await deleteImageFile(`/${req.file.filename}`);
-      return res.status(400).json({
-        error: 'Données invalides',
-        details: parsed.error.flatten().fieldErrors,
-      });
-    }
+  const parsed = eventSchema.safeParse(req.body);
+  if (!parsed.success) {
+    if (req.file) await deleteImageFile(req.file.filename);
+    return res.status(400).json({
+      error: 'Données invalides',
+      details: parsed.error.flatten().fieldErrors,
+    });
+  }
 
-    const { title, description, date_start, date_end, location, published } = parsed.data;
-    const pool     = getPool();
-    const id       = randomUUID();
-    const slug     = await uniqueSlug(pool, title);
-    const imageUrl = req.file ? `/uploads/events/${req.file.filename}` : null;
+  const { title, description, date_start, date_end, location, published } = parsed.data;
+  const pool     = getPool();
+  const id       = randomUUID();
+  const slug     = await uniqueSlug(pool, title);
+  const imageUrl = req.file ? `/uploads/events/${req.file.filename}` : null;
 
-    await pool.execute(
-      `INSERT INTO event (id, title, slug, description, date_start, date_end, location, image_url, published, author_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, title, slug, description ?? null, date_start, date_end ?? null,
-       location ?? null, imageUrl, published ? 1 : 0, req.admin.id]
-    );
+  await pool.execute(
+    `INSERT INTO event (id, title, slug, description, date_start, date_end, location, image_url, published, author_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, title, slug, description ?? null, date_start, date_end ?? null,
+     location ?? null, imageUrl, published ? 1 : 0, req.admin.id]
+  );
 
-    const [rows] = await pool.execute('SELECT * FROM event WHERE id = ?', [id]);
-    res.status(201).json({ event: rows[0] });
-  });
+  const [rows] = await pool.execute('SELECT * FROM event WHERE id = ?', [id]);
+  res.status(201).json({ event: rows[0] });
 });
 
 /* ── PUT /api/admin/events/:id ──────────────────────────────────────── */
-router.put('/:id', (req, res) => {
-  uploadEvent(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+router.put('/:id', async (req, res) => {
+  try {
+    await runUpload(req, res);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 
-    const pool = getPool();
-    const [existing] = await pool.execute(
-      'SELECT * FROM event WHERE id = ? LIMIT 1',
-      [req.params.id]
-    );
-    if (!existing.length) {
-      if (req.file) await deleteImageFile(`/${req.file.filename}`);
-      return res.status(404).json({ error: 'Événement introuvable' });
-    }
+  const pool = getPool();
+  const [existing] = await pool.execute(
+    'SELECT * FROM event WHERE id = ? LIMIT 1',
+    [req.params.id]
+  );
+  if (!existing.length) {
+    if (req.file) await deleteImageFile(req.file.filename);
+    return res.status(404).json({ error: 'Événement introuvable' });
+  }
 
-    const parsed = eventSchema.safeParse(req.body);
-    if (!parsed.success) {
-      if (req.file) await deleteImageFile(`/${req.file.filename}`);
-      return res.status(400).json({
-        error: 'Données invalides',
-        details: parsed.error.flatten().fieldErrors,
-      });
-    }
+  const parsed = eventSchema.safeParse(req.body);
+  if (!parsed.success) {
+    if (req.file) await deleteImageFile(req.file.filename);
+    return res.status(400).json({
+      error: 'Données invalides',
+      details: parsed.error.flatten().fieldErrors,
+    });
+  }
 
-    const { title, description, date_start, date_end, location, published } = parsed.data;
-    const old = existing[0];
+  const { title, description, date_start, date_end, location, published } = parsed.data;
+  const old = existing[0];
 
-    let imageUrl = old.image_url;
-    if (req.file) {
-      await deleteImageFile(old.image_url);
-      imageUrl = `/uploads/events/${req.file.filename}`;
-    }
+  let imageUrl = old.image_url;
+  if (req.file) {
+    await deleteImageFile(old.image_url);
+    imageUrl = `/uploads/events/${req.file.filename}`;
+  }
 
-    // Re-slug seulement si le titre change
-    const slug = title !== old.title
-      ? await uniqueSlug(pool, title, req.params.id)
-      : old.slug;
+  const slug = title !== old.title
+    ? await uniqueSlug(pool, title, req.params.id)
+    : old.slug;
 
-    await pool.execute(
-      `UPDATE event
-       SET title = ?, slug = ?, description = ?, date_start = ?, date_end = ?,
-           location = ?, image_url = ?, published = ?, updated_at = NOW(3)
-       WHERE id = ?`,
-      [title, slug, description ?? null, date_start, date_end ?? null,
-       location ?? null, imageUrl, published ? 1 : 0, req.params.id]
-    );
+  await pool.execute(
+    `UPDATE event
+     SET title = ?, slug = ?, description = ?, date_start = ?, date_end = ?,
+         location = ?, image_url = ?, published = ?, updated_at = NOW(3)
+     WHERE id = ?`,
+    [title, slug, description ?? null, date_start, date_end ?? null,
+     location ?? null, imageUrl, published ? 1 : 0, req.params.id]
+  );
 
-    const [rows] = await pool.execute('SELECT * FROM event WHERE id = ?', [req.params.id]);
-    res.json({ event: rows[0] });
-  });
+  const [rows] = await pool.execute('SELECT * FROM event WHERE id = ?', [req.params.id]);
+  res.json({ event: rows[0] });
 });
 
 /* ── DELETE /api/admin/events/:id ───────────────────────────────────── */

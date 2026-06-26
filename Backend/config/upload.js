@@ -26,8 +26,18 @@ function fileFilter(_req, file, cb) {
   }
 }
 
-export const uploadEvent = multer({
+const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: MAX_SIZE_BYTES },
-}).single('image');
+});
+
+// Wrapper Promise compatible multer 2.x
+export function runUpload(req, res) {
+  return new Promise((resolve, reject) => {
+    upload.single('image')(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
