@@ -16,7 +16,7 @@ export default function AdminLogin() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/admin/evenements');
+      navigate('/connect/evenements');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {

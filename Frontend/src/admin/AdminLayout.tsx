@@ -4,9 +4,9 @@ import { Calendar, Users, MessageSquare, LogOut, Home } from 'lucide-react';
 import { useAdmin } from './useAdmin';
 
 const NAV = [
-  { to: '/admin/evenements', label: 'Événements',     Icon: Calendar },
-  { to: '/admin/admins',     label: 'Administrateurs', Icon: Users },
-  { to: '/admin/messages',   label: 'Messages',        Icon: MessageSquare },
+  { to: '/connect/evenements', label: 'Événements',     Icon: Calendar },
+  { to: '/connect/admins',     label: 'Administrateurs', Icon: Users },
+  { to: '/connect/messages',   label: 'Messages',        Icon: MessageSquare },
 ];
 
 export default function AdminLayout() {
@@ -18,12 +18,12 @@ export default function AdminLayout() {
   }, [checkSession]);
 
   useEffect(() => {
-    if (!loading && !user) navigate('/admin/login', { replace: true });
+    if (!loading && !user) navigate('/connect/login', { replace: true });
   }, [user, loading, navigate]);
 
   async function handleLogout() {
     await logout();
-    navigate('/admin/login', { replace: true });
+    navigate('/connect/login', { replace: true });
   }
 
   if (loading || !user) return null;

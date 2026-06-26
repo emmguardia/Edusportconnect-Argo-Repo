@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 function extractToken(req) {
   // cookie prioritaire (httpOnly), fallback header Authorization
-  if (req.cookies?.token) return req.cookies.token;
+  if (req.cookies?.['__Host-token']) return req.cookies['__Host-token'];
   const auth = req.headers.authorization;
   if (auth?.startsWith('Bearer ')) return auth.slice(7);
   return null;

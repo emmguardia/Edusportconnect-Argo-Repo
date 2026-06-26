@@ -21,6 +21,9 @@ router.use(requireAdmin);
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/events';
 
+// MariaDB DATETIME n'accepte pas le format ISO 8601 avec Z — on convertit en 'YYYY-MM-DD HH:MM:SS'
+const toMysql = (iso) => iso ? iso.replace('T', ' ').slice(0, 19) : null;
+
 const eventSchema = z.object({
   title:       z.string().min(2).max(255).trim(),
   description: z.string().max(5000).trim().optional(),
@@ -105,7 +108,7 @@ router.post('/', async (req, res) => {
   await pool.execute(
     `INSERT INTO event (id, title, slug, description, date_start, date_end, location, image_url, published, author_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, title, slug, description ?? null, date_start, date_end ?? null,
+    [id, title, slug, description ?? null, toMysql(date_start), toMysql(date_end),
      location ?? null, imageUrl, published ? 1 : 0, req.admin.id]
   );
 
@@ -158,7 +161,7 @@ router.put('/:id', async (req, res) => {
      SET title = ?, slug = ?, description = ?, date_start = ?, date_end = ?,
          location = ?, image_url = ?, published = ?, updated_at = NOW(3)
      WHERE id = ?`,
-    [title, slug, description ?? null, date_start, date_end ?? null,
+    [title, slug, description ?? null, toMysql(date_start), toMysql(date_end),
      location ?? null, imageUrl, published ? 1 : 0, req.params.id]
   );
 

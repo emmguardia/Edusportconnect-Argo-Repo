@@ -19,8 +19,8 @@ export default function App() {
   return (
     <Routes>
       {/* ── Admin ─────────────────────────────────────────────────────── */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/connect/login" element={<AdminLogin />} />
+      <Route path="/connect" element={<AdminLayout />}>
         <Route index element={<AdminEvents />} />
         <Route path="evenements" element={<AdminEvents />} />
         <Route path="admins" element={<AdminAdmins />} />

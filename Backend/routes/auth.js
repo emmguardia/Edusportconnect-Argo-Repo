@@ -44,10 +44,12 @@ router.post('/login', loginLimiter, async (req, res) => {
     { expiresIn: '7d' }
   );
 
-  res.cookie('token', token, {
+  // __Host- prefix : force Secure + Path=/ + pas de Domain → impossible à voler via sous-domaine
+  res.cookie('__Host-token', token, {
     httpOnly: true,
-    secure:   IS_PROD,
+    secure:   true,
     sameSite: 'strict',
+    path:     '/',
     maxAge:   7 * 24 * 60 * 60 * 1000,
   });
 
@@ -56,7 +58,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
 /* ── POST /api/auth/logout ─────────────────────────────────────────── */
 router.post('/logout', (_req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'strict' });
+  res.clearCookie('__Host-token', { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
   res.json({ message: 'Déconnecté' });
 });
 

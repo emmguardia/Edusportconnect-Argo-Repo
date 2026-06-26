@@ -108,11 +108,11 @@ export default function Footer() {
               Politique de confidentialité
             </Link>
             <Link
-              to="/admin"
+              to="/connect"
               className="text-xs text-white/20 transition-colors hover:text-white/60"
               aria-label="Administration"
             >
-              ·
+              Connexion
             </Link>
           </div>
         </div>
