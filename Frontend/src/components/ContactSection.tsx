@@ -2,6 +2,8 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { Calendar, Plane, Users, Mail, MapPin } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from './icons';
 
+const API = import.meta.env.VITE_API_URL ?? '';
+
 const UPCOMING = [
   { Icon: Calendar, text: 'Des événements sportifs et éducatifs' },
   { Icon: Plane, text: 'Des échanges internationaux' },
@@ -25,13 +27,33 @@ function ColumnTitle({ children }: { children: ReactNode }) {
 }
 
 export default function ContactSection() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Front-end uniquement pour l'instant — pas de back-end branché.
-    setSent(true);
-    setTimeout(() => setSent(false), 4000);
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const payload = {
+      name: String(data.get('nom') ?? '').trim(),
+      email: String(data.get('email') ?? '').trim(),
+      message: String(data.get('message') ?? '').trim(),
+    };
+
+    setStatus('sending');
+    try {
+      const res = await fetch(`${API}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setStatus('sent');
+      form.reset();
+      setTimeout(() => setStatus('idle'), 4000);
+    } catch {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 5000);
+    }
   };
 
   return (
@@ -96,6 +118,8 @@ export default function ContactSection() {
                   type="text"
                   name="nom"
                   required
+                  minLength={2}
+                  maxLength={100}
                   placeholder="Nom"
                   className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
                 />
@@ -109,6 +133,8 @@ export default function ContactSection() {
                 <textarea
                   name="message"
                   required
+                  minLength={10}
+                  maxLength={3000}
                   rows={5}
                   placeholder="Votre message…"
                   className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
@@ -118,9 +144,13 @@ export default function ContactSection() {
               {/* Bouton Envoyer — chevauche la bordure inférieure du bloc gris */}
               <button
                 type="submit"
-                className="absolute bottom-0 right-6 translate-y-1/2 rounded-lg bg-navy px-7 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-navy-deep hover:-translate-y-[calc(50%+2px)]"
+                disabled={status === 'sending'}
+                className="absolute bottom-0 right-6 translate-y-1/2 rounded-lg bg-navy px-7 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-navy-deep hover:-translate-y-[calc(50%+2px)] disabled:opacity-60"
               >
-                {sent ? 'Merci !' : 'Envoyer'}
+                {status === 'sending' ? 'Envoi…'
+                  : status === 'sent' ? 'Merci !'
+                  : status === 'error' ? 'Erreur, réessayez'
+                  : 'Envoyer'}
               </button>
             </form>
           </div>
