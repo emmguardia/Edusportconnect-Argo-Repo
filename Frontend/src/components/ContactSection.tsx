@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Calendar, Plane, Users, Mail, MapPin } from 'lucide-react';
+import { Calendar, Plane, Users, Mail, MapPin, CheckCircle2, AlertCircle } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from './icons';
 
 const API = import.meta.env.VITE_API_URL ?? '';
@@ -47,12 +47,10 @@ export default function ContactSection() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setStatus('sent');
       form.reset();
-      setTimeout(() => setStatus('idle'), 4000);
+      setStatus('sent');
     } catch {
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 5000);
     }
   };
 
@@ -109,50 +107,91 @@ export default function ContactSection() {
 
           {/* Colonne 3 — Formulaire */}
           <div className="relative">
-            <form
-              onSubmit={handleSubmit}
-              className="relative rounded-2xl bg-cloud p-6 pb-12 shadow-sm sm:p-8 sm:pb-14"
-            >
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  name="nom"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  placeholder="Nom"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
-                />
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="Email"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
-                />
-                <textarea
-                  name="message"
-                  required
-                  minLength={10}
-                  maxLength={3000}
-                  rows={5}
-                  placeholder="Votre message…"
-                  className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
-                />
+            {status === 'sent' ? (
+              /* Vrai écran de succès — remplace le formulaire */
+              <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl bg-cloud p-8 text-center shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle2 className="h-9 w-9 text-green-600" strokeWidth={1.8} />
+                </div>
+                <h3 className="mt-5 text-xl font-bold text-navy">Message envoyé !</h3>
+                <p className="mt-2 max-w-xs text-sm text-slate-600">
+                  Merci de nous avoir contactés. Nous reviendrons vers vous dans les plus brefs délais.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStatus('idle')}
+                  className="mt-6 text-sm font-semibold text-orange transition-colors hover:text-navy"
+                >
+                  Envoyer un autre message
+                </button>
               </div>
-
-              {/* Bouton Envoyer — chevauche la bordure inférieure du bloc gris */}
-              <button
-                type="submit"
-                disabled={status === 'sending'}
-                className="absolute bottom-0 right-6 translate-y-1/2 rounded-lg bg-navy px-7 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-navy-deep hover:-translate-y-[calc(50%+2px)] disabled:opacity-60"
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className="relative rounded-2xl bg-cloud p-6 pb-12 shadow-sm sm:p-8 sm:pb-14"
               >
-                {status === 'sending' ? 'Envoi…'
-                  : status === 'sent' ? 'Merci !'
-                  : status === 'error' ? 'Erreur, réessayez'
-                  : 'Envoyer'}
-              </button>
-            </form>
+                {status === 'error' && (
+                  /* Bannière d'erreur réelle — le formulaire reste pour réessayer */
+                  <div
+                    role="alert"
+                    className="mb-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span>
+                      L'envoi a échoué. Réessayez, ou écrivez-nous directement à{' '}
+                      <a href="mailto:contact@edusportconnect.fr" className="font-semibold underline">
+                        contact@edusportconnect.fr
+                      </a>.
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    name="nom"
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    placeholder="Nom"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="Email"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
+                  />
+                  <textarea
+                    name="message"
+                    required
+                    minLength={10}
+                    maxLength={3000}
+                    rows={5}
+                    placeholder="Votre message…"
+                    className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-navy placeholder:text-slate-400 outline-none transition-all focus:border-orange focus:ring-2 focus:ring-orange/30"
+                  />
+                </div>
+
+                {/* Bouton Envoyer — largeur fixe : ne bouge plus quand le texte change */}
+                <button
+                  type="submit"
+                  disabled={status === 'sending'}
+                  aria-busy={status === 'sending'}
+                  className="absolute bottom-0 right-6 flex w-[150px] translate-y-1/2 items-center justify-center gap-2 rounded-lg bg-navy px-7 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-navy-deep hover:-translate-y-[calc(50%+2px)] disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-1/2 disabled:hover:bg-navy"
+                >
+                  {status === 'sending' ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Envoi…
+                    </>
+                  ) : (
+                    'Envoyer'
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>
