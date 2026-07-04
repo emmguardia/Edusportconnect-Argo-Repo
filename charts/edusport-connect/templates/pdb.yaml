@@ -1,0 +1,11 @@
+{{- /* PodDisruptionBudget — garantit la disponibilité lors des maintenances nœud */ -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: edusport-connect-frontend-pdb
+  namespace: {{ include "esc.namespace" . }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "esc.frontend.selectorLabels" . | nindent 6 }}

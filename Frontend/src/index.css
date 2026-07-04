@@ -1,0 +1,122 @@
+/* Police Poppins chargée via <link> dans index.html (preconnect + stylesheet)
+   pour éviter le FOUC. Ne pas la ré-importer ici. */
+
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/*  Thème ÉduSport Connect — palette + typo exposées comme utilitaires  */
+/*  Tailwind v4. Permet bg-navy, text-orange, ring-teal, etc.           */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* Couleurs principales */
+  --color-navy: #0a2342;          /* bleu marine foncé profond */
+  --color-navy-deep: #061629;     /* nuance plus sombre (bannière/footer) */
+  --color-orange: #f28c28;        /* orange vif */
+  --color-orange-bright: #ff8c00; /* orange accent (flèches, hover) */
+  --color-cloud: #f8f9fa;         /* gris très clair des fonds de section */
+
+  /* Couleurs des piliers */
+  --color-pillar-sport: #0a2342;       /* bleu marine */
+  --color-pillar-num: #2a9d8f;         /* vert d'eau / sarcelle */
+  --color-pillar-droits: #f28c28;      /* orange vif */
+  --color-pillar-inter: #7c3aed;       /* violet */
+  --color-pillar-edu: #e03a6d;         /* rouge framboise */
+  --color-pillar-engagement: #f2b705;  /* jaune moutarde */
+
+  /* Typographie géométrique sans-serif */
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Base                                                                */
+/* ------------------------------------------------------------------ */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-navy);
+  background: #ffffff;
+}
+
+/* Décalage d'ancrage pour le header fixe (les sections ne passent pas dessous) */
+section[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Animations d'apparition au scroll / chargement                      */
+/* ------------------------------------------------------------------ */
+@layer utilities {
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes floatSoft {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  .animate-fade-up      { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-fade-in      { animation: fadeIn 1s ease-out forwards; }
+  .animate-fade-up-1    { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+  .animate-fade-up-2    { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+  .animate-fade-up-3    { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+  .animate-float-soft   { animation: floatSoft 5s ease-in-out infinite; }
+}
+
+/* Grille des piliers : 2 → 3 → 6 colonnes. Définie en CSS pur car Tailwind v4
+   a déjà refusé de générer certaines grid-cols-N « standalone » en prod. */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2.5rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .pillars-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.75rem 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .pillars-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Pré-pied de page : 3 colonnes de largeur inégale (les 2 premières étroites,
+   la 3e — le formulaire — plus large). En CSS pur pour la fiabilité. */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+@media (min-width: 1024px) {
+  .contact-grid {
+    grid-template-columns: 0.9fr 1fr 1.7fr;
+    gap: 3.5rem;
+    align-items: start;
+  }
+}
+
+/* Apparition progressive des cartes de piliers une fois visibles */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

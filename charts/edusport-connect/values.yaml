@@ -1,0 +1,60 @@
+# values.yaml — ÉduSport Connect (prod)
+# Les images sont mises à jour automatiquement par la CI (build-and-push.yml)
+# Format : ghcr.io/<owner>/<image>@sha256:<digest>  (piqué par la CI)
+
+namespace: edusport-connect
+
+# Nom de domaine principal (utilisé par l'IngressRoute Traefik)
+domain: edusportconnect.fr
+
+# ── Ingress (Traefik) ──────────────────────────────────────────────────────────
+ingress:
+  entryPoints:
+    - web
+  # Active le middleware crowdsec-bouncer (présent dans kube-system du cluster).
+  # Passer à false si CrowdSec n'est pas installé.
+  crowdsec: true
+
+# ── Frontend (nginx) ──────────────────────────────────────────────────────────
+frontend:
+  image: ghcr.io/emmguardia/edusport-connect-front@sha256:7d87faa0af12f15cbb1385d231fd794706f1ec5ad9b3964e5d1e54d650387153
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  port: 8080
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuTarget: 70
+    memoryTarget: 80
+
+# ── Backend (Node.js) ─────────────────────────────────────────────────────────
+backend:
+  # L'image sera pinnée par la CI après le premier build
+  image: ghcr.io/emmguardia/edusport-connect-back@sha256:24bdd1980134541b63a148ff7d88f887c465165fb59637baecad47d162c09de9
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  port: 3000
+  frontendUrl: https://edusportconnect.fr
+  adminNotificationEmail: contact@edusportconnect.fr
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+  uploads:
+    storageSize: "2Gi"
+    storageClass: ""   # laisser vide pour utiliser la StorageClass par défaut du cluster

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: edusport-connect
+description: Helm chart for ÉduSport Connect (frontend nginx — backend à venir)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

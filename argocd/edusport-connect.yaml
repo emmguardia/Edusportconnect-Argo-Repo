@@ -1,0 +1,28 @@
+# Application ArgoCD — ÉduSport Connect (prod)
+# À appliquer : kubectl apply -f argocd/edusport-connect.yaml -n argocd
+# Ou à intégrer dans votre repo de config ArgoCD.
+#
+# Branche main + values.yaml (prod). La CI met à jour le digest de l'image
+# dans charts/edusport-connect/values.yaml → ArgoCD synchronise automatiquement.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: edusport-connect
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/emmguardia/Edusportconnect-Argo-Repo
+    targetRevision: main
+    path: charts/edusport-connect
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: edusport-connect
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
