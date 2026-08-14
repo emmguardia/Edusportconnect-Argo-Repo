@@ -5,7 +5,6 @@ import PageHero from '../components/PageHero';
 
 const API = import.meta.env.VITE_API_URL ?? '';
 
-interface EventImage { url: string }
 interface Event {
   id: string;
   title: string;
@@ -16,12 +15,6 @@ interface Event {
   date_end?: string;
   location?: string;
   images: string[];
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
 }
 
 function formatDateShort(iso: string) {
