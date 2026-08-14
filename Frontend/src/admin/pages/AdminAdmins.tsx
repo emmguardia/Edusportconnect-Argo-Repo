@@ -12,7 +12,6 @@ interface Admin {
 }
 
 const EMPTY_CREATE = { name: '', email: '', password: '' };
-const EMPTY_EDIT   = { name: '', email: '', password: '' };
 
 export default function AdminAdmins() {
   const { user: currentUser } = useAdmin();

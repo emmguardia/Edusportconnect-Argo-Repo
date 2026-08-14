@@ -1,7 +1,39 @@
-# Build and push: main → bump version + digest (prod)
+# Build & push : main -> bump version + scan Trivy + push GHCR + pin digest dans values.yaml
 # ArgoCD : App Prod = branche main + namespace edusport-connect
 #
-# Frontend uniquement pour l'instant. Le backend sera ajouté ici plus tard.
+# Runners GitHub-hosted ubuntu-latest (illimités pour repo public).
+# pnpm + minimum-release-age 24h pour défense supply-chain.
+#
+# Secrets GitHub requis : aucun en dehors du GITHUB_TOKEN fourni par la plateforme.
+#
+# ── CE QUI A CHANGÉ ──────────────────────────────────────────────────────────
+#
+# 1. LE `npm update` EN PLEIN DÉPLOIEMENT A ÉTÉ RETIRÉ.
+#    Le job de build lançait `npm update` sur le backend juste avant de
+#    construire l'image, sans jamais commiter le lockfile modifié : l'image
+#    partait donc en production avec des dépendances qui n'étaient pas celles du
+#    dépôt, et deux exécutions successives pouvaient produire des images
+#    différentes à code identique. Les mises à jour passent désormais par
+#    fix-cve.yml, qui les teste, les scanne ET les commite.
+#
+# 2. L'image scannée est exactement l'image poussée.
+#    L'étape de push relançait un `docker build` distinct de celui qui avait
+#    servi au scan Trivy. On builde une seule fois avec `load: true`, on scanne,
+#    puis `docker tag` + `docker push` de ce binaire-là.
+#
+# 3. Le pin de digest est vérifié avant ET après le sed. Un sed qui ne matchait
+#    rien laissait le job passer au vert sans rien déployer.
+#
+# 4. npm -> pnpm, Node 20/22 -> 26. La CI testait le frontend en Node 20 et le
+#    backend en Node 22 pendant que l'image tournait en Node 22 : socles
+#    hétérogènes. pnpm apporte `minimum-release-age=1440` (.npmrc), sans
+#    équivalent chez npm.
+#
+# 5. `pnpm audit --prod` : l'audit ne bloque plus sur des paquets qui ne partent
+#    jamais en production.
+#
+# 6. Le lint n'est plus en `continue-on-error`, et le typecheck est appelé — le
+#    script existait dans package.json sans que rien ne l'exécute.
 
 name: Build and push to GHCR
 
@@ -25,17 +57,20 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  TRIVY_IMAGE: aquasec/trivy:0.69.3
+  TRIVY_IMAGE: aquasec/trivy:0.73.0
+  PNPM_VERSION: 10.33.4
+  NODE_VERSION: '26'
 
 permissions:
   contents: read
   packages: write
-  attestations: write
-  id-token: write
 
+# false et non true : ce job pousse des images sur GHCR puis commite le digest.
+# Une annulation en plein milieu laisse une image publiée que values.yaml ne
+# référence pas.
 concurrency:
   group: build-and-push-${{ github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -48,34 +83,60 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: |
+            Backend/pnpm-lock.yaml
+            Frontend/pnpm-lock.yaml
 
+      # ── Frontend ─────────────────────────────────────────────────────────────
       - name: Frontend – install
         working-directory: Frontend
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            echo "WARN: pas de package-lock.json, npm install"
-            npm install --no-audit --no-fund
-          fi
+        run: pnpm install --frozen-lockfile
 
-      - name: Frontend – audit (high+)
-        run: cd Frontend && npm audit --audit-level=high
+      - name: Frontend – audit (prod, high+)
+        working-directory: Frontend
+        run: pnpm audit --prod --audit-level high
 
+      # Bloquant. Le `continue-on-error: true` qui traînait ici masquait toute
+      # régression de lint.
       - name: Frontend – lint
-        run: cd Frontend && npm run lint
-        continue-on-error: true  # lint informatif — corriger les warnings progressivement
+        working-directory: Frontend
+        run: pnpm lint
 
-      - name: Frontend – test (if present)
-        run: cd Frontend && npm run test --if-present
+      # Le script existait dans package.json mais n'était jamais appelé.
+      # Il cible tsconfig.app.json, plus strict que le tsconfig.json utilisé par
+      # `pnpm build` — d'où des erreurs que le build ne remontait pas.
+      - name: Frontend – typecheck
+        working-directory: Frontend
+        run: pnpm typecheck
+
+      - name: Frontend – tests (if present)
+        working-directory: Frontend
+        run: pnpm run --if-present test
+
+      # ── Backend ──────────────────────────────────────────────────────────────
+      - name: Backend – install
+        working-directory: Backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Backend – audit (prod, high+)
+        working-directory: Backend
+        run: pnpm audit --prod --audit-level high
+
+      - name: Backend – tests (if present)
+        working-directory: Backend
+        run: pnpm run --if-present test
 
   build-and-push:
     name: Build and push
@@ -89,26 +150,34 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: |
+            Backend/pnpm-lock.yaml
+            Frontend/pnpm-lock.yaml
 
       - name: Bump version (prod)
         id: tag
         run: |
+          set -euo pipefail
           CONTENT=$(cat version.txt | tr -d '\r\n ')
           MAJOR=$(echo "$CONTENT" | cut -d. -f1)
           MINOR=$(echo "$CONTENT" | cut -d. -f2)
           PATCH=$(echo "$CONTENT" | cut -d. -f3)
           if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]] || ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
-            echo "version.txt invalide: $CONTENT (attendu X.Y.Z)"
+            echo "::error::version.txt invalide: $CONTENT (attendu X.Y.Z)"
             exit 1
           fi
           if [ "$PATCH" -lt 9 ]; then
@@ -120,93 +189,89 @@ jobs:
           NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "$NEW_VERSION" > version.txt
           TAG="v${NEW_VERSION}"
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Version: $CONTENT → $NEW_VERSION (tag: $TAG)"
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # ── Frontend ─────────────────────────────────────────────────────────────
+      # Le Dockerfile frontend est un nginx qui copie dist/ : la compilation
+      # doit donc avoir lieu ici.
       - name: Frontend – install & build (dist/ requis par Dockerfile)
         working-directory: Frontend
         run: |
-          npm ci
-          npm run build
+          pnpm install --frozen-lockfile
+          pnpm run build
 
       - name: Extract metadata (frontend)
         id: meta-frontend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/edusport-connect-front
           tags: |
             type=raw,value=${{ steps.tag.outputs.tag }}
 
-      # Étape 1 : build local pour le scan Trivy (pas de push)
-      - name: Build frontend (local — pour scan Trivy)
-        uses: docker/build-push-action@v6
+      - name: Build frontend (local)
+        uses: docker/build-push-action@v7
         with:
           context: ./Frontend
           load: true
           push: false
-          tags: scan-frontend:latest
+          tags: edusport-front:candidate
+          labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           pull: true
 
-      # Étape 2 : scan AVANT push — image vulnérable ne part jamais dans GHCR
       - name: Trivy scan frontend (avant push)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
             ${{ env.TRIVY_IMAGE }} image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --format table \
-            scan-frontend:latest
+            edusport-front:candidate
 
-      # Étape 3 : push uniquement si le scan est clean
       - name: Push frontend
-        id: build-frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./Frontend
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=gha
-          pull: true
+        id: push-frontend
+        env:
+          META_TAGS: ${{ steps.meta-frontend.outputs.tags }}
+        run: |
+          set -euo pipefail
+          TARGET=$(printf '%s\n' "$META_TAGS" | head -1)
+          docker tag edusport-front:candidate "$TARGET"
+          PUSH_OUT=$(docker push "$TARGET" | tee /dev/stderr)
+          DIGEST=$(docker buildx imagetools inspect "$TARGET" --format '{{.Manifest.Digest}}' 2>/dev/null || true)
+          if [ -z "$DIGEST" ]; then
+            DIGEST=$(printf '%s\n' "$PUSH_OUT" | grep -oE 'sha256:[0-9a-f]{64}' | tail -1 || true)
+          fi
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Frontend publié : $TARGET (digest: ${DIGEST:-introuvable})"
 
       # ── Backend ──────────────────────────────────────────────────────────────
+      # Pas de `npm update` ici : c'est fix-cve.yml qui met à jour les
+      # dépendances, en les testant et en les commitant.
       - name: Extract metadata (backend)
         id: meta-backend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/edusport-connect-back
           tags: |
             type=raw,value=${{ steps.tag.outputs.tag }}
 
-      - name: Setup Node.js (backend)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Update backend dependencies
-        working-directory: Backend
-        run: |
-          npm update
-          npm audit --audit-level=high --omit=dev
-
-      - name: Build backend (local — pour scan Trivy)
-        uses: docker/build-push-action@v6
+      - name: Build backend (local)
+        uses: docker/build-push-action@v7
         with:
           context: ./Backend
           load: true
           push: false
-          tags: scan-backend:latest
+          tags: edusport-back:candidate
+          labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           pull: true
@@ -215,56 +280,106 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
             ${{ env.TRIVY_IMAGE }} image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --format table \
-            scan-backend:latest
+            edusport-back:candidate
 
       - name: Push backend
-        id: build-backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./Backend
-          push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
-          cache-from: type=gha
-          pull: true
-
-      # ── Pin digest dans values.yaml → ArgoCD sync automatique ─────────────────
-      - name: Pin Helm values to image digest
+        id: push-backend
+        env:
+          META_TAGS: ${{ steps.meta-backend.outputs.tags }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          DIGEST_FRONTEND="${{ steps.build-frontend.outputs.digest }}"
-          DIGEST_BACKEND="${{ steps.build-backend.outputs.digest }}"
-          OWNER="${{ github.repository_owner }}"
-          REG="${{ env.REGISTRY }}"
+          set -euo pipefail
+          TARGET=$(printf '%s\n' "$META_TAGS" | head -1)
+          docker tag edusport-back:candidate "$TARGET"
+          PUSH_OUT=$(docker push "$TARGET" | tee /dev/stderr)
+          DIGEST=$(docker buildx imagetools inspect "$TARGET" --format '{{.Manifest.Digest}}' 2>/dev/null || true)
+          if [ -z "$DIGEST" ]; then
+            DIGEST=$(printf '%s\n' "$PUSH_OUT" | grep -oE 'sha256:[0-9a-f]{64}' | tail -1 || true)
+          fi
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Backend publié : $TARGET (digest: ${DIGEST:-introuvable})"
 
-          if [ -n "$DIGEST_FRONTEND" ]; then
+      # ── Pin digest dans values.yaml → ArgoCD sync automatique ────────────────
+      - name: Pin Helm values to image digest
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          BRANCH: ${{ github.ref_name }}
+          DIGEST_FRONTEND: ${{ steps.push-frontend.outputs.digest }}
+          DIGEST_BACKEND: ${{ steps.push-backend.outputs.digest }}
+          OWNER: ${{ github.repository_owner }}
+          REG: ${{ env.REGISTRY }}
+        run: |
+          set -euo pipefail
+          VALUES_PATH="charts/edusport-connect/values.yaml"
+
+          # Remplace la ligne `image:` d'un composant, en échouant bruyamment si
+          # elle est introuvable ou si le remplacement n'a pas pris. Garde-fou
+          # contre le déploiement fantôme : un sed muet passait au vert.
+          update_image() {
+            local key="$1" newref="$2"
+            if ! grep -qE "^[[:space:]]+image:[[:space:]]*ghcr\.io/.*${key}[@:]" "$VALUES_PATH"; then
+              echo "::error::Aucune ligne 'image:' pour ${key} dans ${VALUES_PATH}. Le pin de digest aurait échoué en silence."
+              exit 1
+            fi
+            sed -i -E "s|^([[:space:]]+)image:[[:space:]]*ghcr\.io/.*${key}[@:].*|\1image: ${newref}|" "$VALUES_PATH"
+            if ! grep -qF "image: ${newref}" "$VALUES_PATH"; then
+              echo "::error::Le remplacement de ${key} n'a pas pris dans ${VALUES_PATH}."
+              exit 1
+            fi
+            echo "  ${key} → ${newref}"
+          }
+
+          if [ -n "${DIGEST_FRONTEND:-}" ]; then
             FRONTEND_IMAGE="${REG}/${OWNER}/edusport-connect-front@${DIGEST_FRONTEND}"
           else
             FRONTEND_IMAGE="${REG}/${OWNER}/edusport-connect-front:${TAG}"
+            echo "::warning::Digest frontend introuvable, pin sur le tag ${TAG} (déploiement OK mais non immuable)."
           fi
-
-          if [ -n "$DIGEST_BACKEND" ]; then
+          if [ -n "${DIGEST_BACKEND:-}" ]; then
             BACKEND_IMAGE="${REG}/${OWNER}/edusport-connect-back@${DIGEST_BACKEND}"
           else
             BACKEND_IMAGE="${REG}/${OWNER}/edusport-connect-back:${TAG}"
+            echo "::warning::Digest backend introuvable, pin sur le tag ${TAG} (déploiement OK mais non immuable)."
           fi
 
-          VALUES_PATH="charts/edusport-connect/values.yaml"
-
-          sed -i "s|  image: ghcr.io/.*edusport-connect-front.*|  image: ${FRONTEND_IMAGE}|" "$VALUES_PATH"
-          sed -i "s|  image: ghcr.io/.*edusport-connect-back.*|  image: ${BACKEND_IMAGE}|" "$VALUES_PATH"
+          # `edusport-connect-front` et `edusport-connect-back` sont des clés
+          # distinctes : aucun risque qu'un remplacement écrase l'autre.
+          update_image "edusport-connect-front" "$FRONTEND_IMAGE"
+          update_image "edusport-connect-back"  "$BACKEND_IMAGE"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add version.txt "$VALUES_PATH"
 
           if git diff --staged --quiet; then
-            echo "Helm values already up to date, skip commit"
+            echo "::warning::Rien à commiter alors que le pin a réussi — values.yaml pointait déjà sur ce digest."
           else
-            git commit -m "chore(helm): pin image to digest $TAG [skip ci]"
-            git stash
-            git pull --rebase origin ${{ github.ref_name }}
-            git stash pop || true
-            git push origin ${{ github.ref_name }}
+            git commit -m "chore(helm): pin images to digest ${TAG} [skip ci]"
+
+            pushed=false
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:${BRANCH}"; then
+                pushed=true
+                break
+              fi
+              echo "::warning::Push refusé (tentative ${attempt}/3), rebase sur origin/${BRANCH}…"
+              git fetch origin "$BRANCH"
+              if ! git rebase "origin/${BRANCH}"; then
+                git rebase --abort || true
+                echo "::error::Conflit de rebase sur ${BRANCH}, intervention manuelle requise."
+                exit 1
+              fi
+              sleep $((attempt * 3))
+            done
+            if [ "$pushed" != "true" ]; then
+              echo "::error::Impossible de pousser le pin de digest après 3 tentatives."
+              exit 1
+            fi
           fi
+
+          {
+            echo "### Déploiement ${TAG}"
+            echo "- Frontend : \`${FRONTEND_IMAGE}\`"
+            echo "- Backend : \`${BACKEND_IMAGE}\`"
+            echo ""
+            echo "Images scannées par Trivy avant publication. ArgoCD synchronise le cluster dans les minutes qui suivent."
+          } >> "$GITHUB_STEP_SUMMARY"
