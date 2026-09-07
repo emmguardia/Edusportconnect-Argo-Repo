@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Fichier de vérification Google Search Console : Google compare le contenu à
+# l'octet près. Pas de normalisation de fin de ligne dessus.
+Frontend/public/google*.html -text

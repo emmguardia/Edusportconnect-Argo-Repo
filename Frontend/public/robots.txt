@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Back-office : aucune valeur en recherche.
+# /api/ reste volontairement autorisé : le SPA le lit en XHR pour afficher les
+# événements, et Googlebot doit pouvoir le suivre pour rendre la page.
+Disallow: /connect
+
 Sitemap: https://edusportconnect.fr/sitemap.xml

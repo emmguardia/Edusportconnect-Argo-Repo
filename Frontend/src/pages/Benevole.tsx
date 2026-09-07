@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { HeartHandshake, Sparkles, GraduationCap, ArrowRight, type LucideIcon } from 'lucide-react';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
+import { useSeo } from '../hooks/useSeo';
 
 interface Reason {
   Icon: LucideIcon;
@@ -28,6 +29,12 @@ const REASONS: Reason[] = [
 ];
 
 export default function Benevole() {
+  useSeo({
+    title: 'Devenir bénévole',
+    description:
+      "Rejoignez ÉduSport Connect comme bénévole : encadrement sportif, ateliers numériques, projets européens. Découvrez comment contribuer et écrivez-nous.",
+  });
+
   return (
     <>
       <PageHero

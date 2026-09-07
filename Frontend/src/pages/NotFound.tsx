@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
+import { useSeo } from '../hooks/useSeo';
 
 export default function NotFound() {
+  // Un SPA ne peut pas renvoyer un vrai code 404 : nginx a déjà répondu 200 avec
+  // index.html. Le noindex empêche au moins Google d'indexer ces URL fantômes.
+  useSeo({
+    title: 'Page introuvable',
+    description: "Cette page n'existe pas ou a été déplacée.",
+    noindex: true,
+  });
+
   return (
     <section className="flex min-h-[70vh] items-center justify-center bg-white px-4 pt-20">
       <div className="text-center">

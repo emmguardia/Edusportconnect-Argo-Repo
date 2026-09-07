@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, User, ArrowRight, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
 import PageHero from '../components/PageHero';
+import { useSeo } from '../hooks/useSeo';
 
 const API = import.meta.env.VITE_API_URL ?? '';
 
@@ -140,6 +141,12 @@ function EventCard({ event }: { event: Event }) {
 }
 
 export default function Evenements() {
+  useSeo({
+    title: 'Événements',
+    description:
+      "Les prochains rendez-vous d'ÉduSport Connect : événements sportifs, échanges internationaux, ateliers et formations ouverts aux jeunes et aux bénévoles.",
+  });
+
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
