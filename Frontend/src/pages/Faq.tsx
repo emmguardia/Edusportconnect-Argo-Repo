@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import PageHero from '../components/PageHero';
+import { useSeo } from '../hooks/useSeo';
 
 interface QA {
   q: string;
@@ -32,6 +33,12 @@ const FAQ: QA[] = [
 ];
 
 export default function Faq() {
+  useSeo({
+    title: 'Foire aux questions',
+    description:
+      "Les réponses aux questions fréquentes sur ÉduSport Connect : l'association, l'engagement bénévole, les partenariats et le déroulement de nos actions.",
+  });
+
   return (
     <>
       <PageHero

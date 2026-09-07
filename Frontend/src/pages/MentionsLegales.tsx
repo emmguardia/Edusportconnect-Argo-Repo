@@ -1,7 +1,14 @@
 import { FileText } from 'lucide-react';
 import PageHero from '../components/PageHero';
+import { useSeo } from '../hooks/useSeo';
 
 export default function MentionsLegales() {
+  useSeo({
+    title: 'Mentions légales',
+    description:
+      "Mentions légales du site d'ÉduSport Connect : éditeur, direction de la publication, hébergement et conditions d'utilisation.",
+  });
+
   return (
     <>
       <PageHero eyebrow="Informations légales" title="Mentions légales" />

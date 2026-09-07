@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import PageHero from '../components/PageHero';
+import { useSeo } from '../hooks/useSeo';
 
 /* -------------------------------------------------------------------------- */
 /*  Valeurs (reprises de la charte : bandeau Inclusion · Solidarité ·          */
@@ -49,6 +50,12 @@ const VALUES: Value[] = [
 ];
 
 export default function NotreHistoire() {
+  useSeo({
+    title: 'Notre histoire',
+    description:
+      "Du parcours de son fondateur à un projet tourné vers la jeunesse d'Europe et d'Afrique : la naissance d'ÉduSport Connect et les valeurs qui la portent.",
+  });
+
   return (
     <>
       <PageHero

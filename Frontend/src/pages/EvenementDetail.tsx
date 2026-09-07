@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, User, ArrowLeft, ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import { useSeo } from '../hooks/useSeo';
 
 const API = import.meta.env.VITE_API_URL ?? '';
 
@@ -32,6 +33,19 @@ export default function EvenementDetail() {
       .then(d => { if (d) setEvent(d.event); })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // Appelé avant les retours anticipés ci-dessous : un hook ne peut pas être
+  // conditionnel. Le titre suit l'événement dès que le fetch a répondu — Google
+  // exécute le JS et attend le rendu avant de lire le <head>.
+  useSeo({
+    title: event?.title ?? 'Événement',
+    // `||` et non `??` : une description vide doit aussi basculer sur le repli.
+    description: event
+      ? (event.description?.replace(/\s+/g, ' ').trim().slice(0, 155) ||
+         `${event.title}, un événement organisé par ÉduSport Connect.`)
+      : "Le détail d'un événement organisé par ÉduSport Connect.",
+    noindex: notFound,
+  });
 
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-white">

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
+import { useSeo } from '../hooks/useSeo';
 
 interface Item {
   Icon: LucideIcon;
@@ -59,6 +60,12 @@ const SUPPORT: Item[] = [
 ];
 
 export default function Partenaires() {
+  useSeo({
+    title: 'Devenir partenaire',
+    description:
+      "Entreprises, collectivités et structures : associez-vous à ÉduSport Connect pour agir en faveur de la jeunesse, en Europe comme en Afrique.",
+  });
+
   return (
     <>
       <PageHero

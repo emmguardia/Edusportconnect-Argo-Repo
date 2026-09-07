@@ -1,7 +1,14 @@
 import { ShieldCheck } from 'lucide-react';
 import PageHero from '../components/PageHero';
+import { useSeo } from '../hooks/useSeo';
 
 export default function PolitiqueConfidentialite() {
+  useSeo({
+    title: 'Politique de confidentialité',
+    description:
+      "Comment ÉduSport Connect collecte, utilise et protège vos données personnelles, et comment exercer vos droits d'accès, de rectification et de suppression.",
+  });
+
   return (
     <>
       <PageHero eyebrow="Vos données" title="Politique de confidentialité" />
