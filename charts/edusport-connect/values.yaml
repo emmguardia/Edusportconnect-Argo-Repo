@@ -10,7 +10,7 @@ domain: edusportconnect.fr
 # ── Ingress (Traefik) ──────────────────────────────────────────────────────────
 ingress:
   entryPoints:
-    - web
+    - websecure
   # Active le middleware crowdsec-bouncer (présent dans kube-system du cluster).
   # Passer à false si CrowdSec n'est pas installé.
   crowdsec: true
