@@ -13,6 +13,15 @@ interface Admin {
 
 const EMPTY_CREATE = { name: '', email: '', password: '' };
 
+// L'appel réseau est sorti du composant : il ne touche à aucun state, ce qui
+// permet de le partager entre le chargement initial (dans l'effet) et les
+// rechargements déclenchés par l'interface, sans dupliquer l'URL.
+async function fetchAdmins(signal?: AbortSignal): Promise<Admin[]> {
+  const res  = await fetch(`${API}/api/admin/admins`, { credentials: 'include', signal });
+  const data = await res.json();
+  return data.admins ?? [];
+}
+
 export default function AdminAdmins() {
   const { user: currentUser } = useAdmin();
   const [admins, setAdmins]   = useState<Admin[]>([]);
@@ -23,18 +32,29 @@ export default function AdminAdmins() {
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
 
+  // Rechargement déclenché par l'UI (après création, édition ou suppression) :
+  // le passage par `loading` est voulu, on est dans un gestionnaire d'événement.
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/admin/admins`, { credentials: 'include' });
-      const data = await res.json();
-      setAdmins(data.admins ?? []);
+      setAdmins(await fetchAdmins());
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  // Chargement initial. `loading` vaut déjà true au premier rendu : l'effet n'a
+  // donc rien à écrire synchroniquement, les états ne bougent qu'au retour du
+  // fetch. L'AbortController coupe la requête au démontage, ce qui évite qu'une
+  // réponse tardive repeuple un composant disparu — et, en StrictMode, que le
+  // premier montage vienne écraser le résultat du second.
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchAdmins(ac.signal)
+      .then(list => { setAdmins(list); setLoading(false); })
+      .catch(() => { if (!ac.signal.aborted) setLoading(false); });
+    return () => ac.abort();
+  }, []);
 
   function openCreate() {
     setEditing(null);

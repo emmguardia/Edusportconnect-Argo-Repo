@@ -12,23 +12,43 @@ interface Message {
   created_at: string;
 }
 
+// L'appel réseau est sorti du composant : il ne touche à aucun state, ce qui
+// permet de le partager entre le chargement initial (dans l'effet) et le
+// rechargement déclenché par l'interface, sans dupliquer l'URL.
+async function fetchMessages(signal?: AbortSignal): Promise<Message[]> {
+  const res  = await fetch(`${API}/api/admin/messages`, { credentials: 'include', signal });
+  const data = await res.json();
+  return data.messages ?? [];
+}
+
 export default function AdminMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading]   = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  // Rechargement déclenché par l'UI (après suppression) : le passage par
+  // `loading` est voulu, on est dans un gestionnaire d'événement.
   async function load() {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/api/admin/messages`, { credentials: 'include' });
-      const data = await res.json();
-      setMessages(data.messages ?? []);
+      setMessages(await fetchMessages());
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  // Chargement initial. `loading` vaut déjà true au premier rendu : l'effet n'a
+  // donc rien à écrire synchroniquement, les états ne bougent qu'au retour du
+  // fetch. L'AbortController coupe la requête au démontage, ce qui évite qu'une
+  // réponse tardive repeuple un composant disparu — et, en StrictMode, que le
+  // premier montage vienne écraser le résultat du second.
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchMessages(ac.signal)
+      .then(list => { setMessages(list); setLoading(false); })
+      .catch(() => { if (!ac.signal.aborted) setLoading(false); });
+    return () => ac.abort();
+  }, []);
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer ce message ?')) return;
