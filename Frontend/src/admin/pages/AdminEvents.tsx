@@ -19,6 +19,15 @@ interface Event {
 
 const EMPTY_FORM = { title: '', description: '', organizer: '', date_start: '', date_end: '', location: '', published: false };
 
+// L'appel réseau est sorti du composant : il ne touche à aucun state, ce qui
+// permet de le partager entre le chargement initial (dans l'effet) et les
+// rechargements déclenchés par l'interface, sans dupliquer l'URL.
+async function fetchEvents(signal?: AbortSignal): Promise<Event[]> {
+  const res  = await fetch(`${API}/api/admin/events`, { credentials: 'include', signal });
+  const data = await res.json();
+  return data.events ?? [];
+}
+
 export default function AdminEvents() {
   const [events, setEvents]   = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,16 +39,28 @@ export default function AdminEvents() {
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
 
+  // Rechargement déclenché par l'UI (après enregistrement, suppression ou
+  // publication) : le passage par `loading` est voulu, on est dans un
+  // gestionnaire d'événement.
   async function loadEvents() {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/admin/events`, { credentials: 'include' });
-      const data = await res.json();
-      setEvents(data.events ?? []);
+      setEvents(await fetchEvents());
     } finally { setLoading(false); }
   }
 
-  useEffect(() => { loadEvents(); }, []);
+  // Chargement initial. `loading` vaut déjà true au premier rendu : l'effet n'a
+  // donc rien à écrire synchroniquement, les états ne bougent qu'au retour du
+  // fetch. L'AbortController coupe la requête au démontage, ce qui évite qu'une
+  // réponse tardive repeuple un composant disparu — et, en StrictMode, que le
+  // premier montage vienne écraser le résultat du second.
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchEvents(ac.signal)
+      .then(list => { setEvents(list); setLoading(false); })
+      .catch(() => { if (!ac.signal.aborted) setLoading(false); });
+    return () => ac.abort();
+  }, []);
 
   function openCreate() {
     setEditing(null); setForm(EMPTY_FORM); setNewFiles([]); setKeptImages([]); setError(''); setModal('create');
