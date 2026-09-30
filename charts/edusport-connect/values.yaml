@@ -17,7 +17,7 @@ ingress:
 
 # ── Frontend (nginx) ──────────────────────────────────────────────────────────
 frontend:
-  image: ghcr.io/emmguardia/edusport-connect-front@sha256:1ae08e39fb3ca75b7f9a226c17465c4bfcd097e4e96103a722e0a6fe33a6cd98
+  image: ghcr.io/emmguardia/edusport-connect-front@sha256:fb29bd8d0ab057043cade7c5d1b312382bc8f714098fee2ed4bb4ff016ed14ae
   imagePullPolicy: IfNotPresent
   replicas: 2
   strategy:
@@ -42,7 +42,7 @@ frontend:
 # ── Backend (Node.js) ─────────────────────────────────────────────────────────
 backend:
   # L'image sera pinnée par la CI après le premier build
-  image: ghcr.io/emmguardia/edusport-connect-back@sha256:0556ca9a6146a4c9cbd36261998d8c41ea70728d362fec3388988fd16e9cf24d
+  image: ghcr.io/emmguardia/edusport-connect-back@sha256:b65fba9306aab5bfcde052281a8239b43b280e69737a976035fdf93e33d1c17f
   imagePullPolicy: IfNotPresent
   replicas: 1
   port: 3000
