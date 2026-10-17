@@ -45,8 +45,6 @@ spec:
               value: {{ .Values.backend.port | quote }}
             - name: FRONTEND_URL
               value: {{ .Values.backend.frontendUrl | quote }}
-            - name: UPLOAD_DIR
-              value: /app/uploads/events
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
@@ -84,9 +82,6 @@ spec:
                 secretKeyRef:
                   name: edusport-backend-secret
                   key: JWT_PRIVATE_KEY
-          volumeMounts:
-            - name: uploads
-              mountPath: /app/uploads
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
           startupProbe:
@@ -111,7 +106,3 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
-      volumes:
-        - name: uploads
-          persistentVolumeClaim:
-            claimName: edusport-connect-uploads

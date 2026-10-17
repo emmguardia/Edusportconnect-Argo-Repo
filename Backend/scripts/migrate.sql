@@ -56,3 +56,12 @@ CREATE TABLE IF NOT EXISTS contact_message (
   PRIMARY KEY (id),
   KEY idx_message_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- v3 — Images stockées dans la base (Galera, répliquée sur 3 nœuds) au lieu
+-- d'un volume local-path qui clouait le backend sur un seul nœud du cluster.
+-- file_key : identifiant public non devinable (l'URL ne révèle pas l'id).
+ALTER TABLE event_images
+  ADD COLUMN IF NOT EXISTS file_key CHAR(36)    NULL AFTER url,
+  ADD COLUMN IF NOT EXISTS mime     VARCHAR(32) NULL AFTER file_key,
+  ADD COLUMN IF NOT EXISTS data     MEDIUMBLOB  NULL AFTER mime;
+ALTER TABLE event_images ADD UNIQUE INDEX IF NOT EXISTS uq_event_images_file_key (file_key);

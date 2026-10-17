@@ -55,6 +55,3 @@ backend:
     limits:
       cpu: "300m"
       memory: "256Mi"
-  uploads:
-    storageSize: "2Gi"
-    storageClass: ""   # laisser vide pour utiliser la StorageClass par défaut du cluster

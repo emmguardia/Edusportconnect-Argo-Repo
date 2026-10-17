@@ -2,16 +2,12 @@ import { Router } from 'express';
 import { z } from 'zod';
 import slugify from 'slugify';
 import { randomUUID } from 'crypto';
-import { unlink } from 'fs/promises';
-import path from 'path';
 import { getPool } from '../../config/database.js';
 import { requireAdmin } from '../../middleware/auth.js';
-import { runUpload } from '../../config/upload.js';
+import { runUpload, checkImages, MAX_IMAGES } from '../../config/upload.js';
 
 const router = Router();
 router.use(requireAdmin);
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/events';
 
 const eventSchema = z.object({
   title:       z.string().min(2).max(255).trim(),
@@ -44,11 +40,13 @@ async function uniqueSlug(pool, title, excludeId = null) {
   }
 }
 
-async function deleteFile(filename) {
-  if (!filename) return;
-  try {
-    await unlink(path.join(UPLOAD_DIR, path.basename(filename)));
-  } catch { /* ignore */ }
+/** Enregistre une image en base ; l'URL publique utilise une clé non devinable. */
+async function insertImage(pool, eventId, file, position) {
+  const key = randomUUID();
+  await pool.execute(
+    'INSERT INTO event_images (event_id, url, file_key, mime, data, position) VALUES (?, ?, ?, ?, ?, ?)',
+    [eventId, `/api/events/images/${key}`, key, file.detectedMime, file.buffer, position]
+  );
 }
 
 async function getEventWithImages(pool, id) {
@@ -94,13 +92,14 @@ router.post('/', async (req, res) => {
 
   const parsed = eventSchema.safeParse(req.body);
   if (!parsed.success) {
-    for (const f of req.files ?? []) await deleteFile(f.filename);
     return res.status(400).json({ error: 'Données invalides', details: parsed.error.flatten().fieldErrors });
   }
 
   if (!req.files?.length) {
     return res.status(400).json({ error: 'Au moins une image est requise.' });
   }
+  const imageError = checkImages(req.files);
+  if (imageError) return res.status(400).json({ error: imageError });
 
   const { title, description, organizer, date_start, date_end, location, published } = parsed.data;
   const pool = getPool();
@@ -115,10 +114,7 @@ router.post('/', async (req, res) => {
   );
 
   for (let i = 0; i < req.files.length; i++) {
-    await pool.execute(
-      'INSERT INTO event_images (event_id, url, position) VALUES (?, ?, ?)',
-      [id, `/uploads/events/${req.files[i].filename}`, i]
-    );
+    await insertImage(pool, id, req.files[i], i);
   }
 
   const event = await getEventWithImages(pool, id);
@@ -134,38 +130,36 @@ router.put('/:id', async (req, res) => {
   const pool = getPool();
   const existing = await getEventWithImages(pool, req.params.id);
   if (!existing) {
-    for (const f of req.files ?? []) await deleteFile(f.filename);
     return res.status(404).json({ error: 'Événement introuvable' });
   }
 
   const parsed = eventSchema.safeParse(req.body);
   if (!parsed.success) {
-    for (const f of req.files ?? []) await deleteFile(f.filename);
     return res.status(400).json({ error: 'Données invalides', details: parsed.error.flatten().fieldErrors });
   }
+  const imageError = checkImages(req.files ?? []);
+  if (imageError) return res.status(400).json({ error: imageError });
 
   // Images à conserver (ids envoyés par le client)
   const keepIds = parsed.data.keep_images
     ? JSON.parse(parsed.data.keep_images).map(Number)
     : existing.images.map(i => i.id);
 
+  // Contrôles AVANT toute suppression : une requête refusée ne doit rien effacer
+  const keptCount = keepIds.filter(id => existing.images.some(i => i.id === id)).length;
+  const totalAfter = keptCount + (req.files?.length ?? 0);
+  if (totalAfter < 1) {
+    return res.status(400).json({ error: 'Au moins une image est requise.' });
+  }
+  if (totalAfter > MAX_IMAGES) {
+    return res.status(400).json({ error: `Maximum ${MAX_IMAGES} images.` });
+  }
+
   // Supprimer les images non conservées
   for (const img of existing.images) {
     if (!keepIds.includes(img.id)) {
       await pool.execute('DELETE FROM event_images WHERE id = ?', [img.id]);
-      await deleteFile(img.url);
     }
-  }
-
-  const keptCount = keepIds.filter(id => existing.images.some(i => i.id === id)).length;
-  const totalAfter = keptCount + (req.files?.length ?? 0);
-  if (totalAfter < 1) {
-    for (const f of req.files ?? []) await deleteFile(f.filename);
-    return res.status(400).json({ error: 'Au moins une image est requise.' });
-  }
-  if (totalAfter > 5) {
-    for (const f of req.files ?? []) await deleteFile(f.filename);
-    return res.status(400).json({ error: 'Maximum 5 images.' });
   }
 
   const { title, description, organizer, date_start, date_end, location, published } = parsed.data;
@@ -187,10 +181,7 @@ router.put('/:id', async (req, res) => {
   }
   // Ajouter les nouvelles
   for (const f of req.files ?? []) {
-    await pool.execute(
-      'INSERT INTO event_images (event_id, url, position) VALUES (?, ?, ?)',
-      [req.params.id, `/uploads/events/${f.filename}`, pos++]
-    );
+    await insertImage(pool, req.params.id, f, pos++);
   }
 
   const event = await getEventWithImages(pool, req.params.id);
@@ -203,7 +194,7 @@ router.delete('/:id', async (req, res) => {
   const existing = await getEventWithImages(pool, req.params.id);
   if (!existing) return res.status(404).json({ error: 'Événement introuvable' });
 
-  for (const img of existing.images) await deleteFile(img.url);
+  // ON DELETE CASCADE : les images (en base) partent avec l'événement
   await pool.execute('DELETE FROM event WHERE id = ?', [req.params.id]);
   res.json({ message: 'Événement supprimé' });
 });
