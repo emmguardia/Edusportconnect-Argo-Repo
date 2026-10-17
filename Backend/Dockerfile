@@ -78,10 +78,8 @@ COPY --chown=appuser:appgroup utils/ ./utils/
 # démarrage. L'ancien `COPY . .` les embarquait — on préserve ce comportement.
 COPY --chown=appuser:appgroup scripts/ ./scripts/
 
-# Dossier d'upload inscriptible par l'application
-RUN mkdir -p uploads/events && chown -R appuser:appgroup /app/uploads
-
-VOLUME ["/app/uploads"]
+# Pas de dossier d'upload : les images d'événements sont stockées en base
+# (Galera), le conteneur n'écrit rien sur disque.
 
 USER appuser
 

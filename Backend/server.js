@@ -17,9 +17,6 @@ applySecurityMiddleware(app);
 app.use(cookieParser());
 app.use(express.json({ limit: '512kb' }));
 
-/* ── Uploads statiques ─────────────────────────────────────────────── */
-app.use('/uploads', express.static('uploads'));
-
 /* ── Health ────────────────────────────────────────────────────────── */
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'edusport-backend' });
