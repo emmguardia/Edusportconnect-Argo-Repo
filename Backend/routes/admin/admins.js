@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({
       error: 'Données invalides',
-      details: parsed.error.flatten().fieldErrors,
+      details: z.flattenError(parsed.error).fieldErrors,
     });
   }
 
@@ -80,7 +80,7 @@ router.put('/:id', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({
       error: 'Données invalides',
-      details: parsed.error.flatten().fieldErrors,
+      details: z.flattenError(parsed.error).fieldErrors,
     });
   }
 
