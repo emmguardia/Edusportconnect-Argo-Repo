@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
 
   const parsed = eventSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Données invalides', details: parsed.error.flatten().fieldErrors });
+    return res.status(400).json({ error: 'Données invalides', details: z.flattenError(parsed.error).fieldErrors });
   }
 
   if (!req.files?.length) {
@@ -135,7 +135,7 @@ router.put('/:id', async (req, res) => {
 
   const parsed = eventSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Données invalides', details: parsed.error.flatten().fieldErrors });
+    return res.status(400).json({ error: 'Données invalides', details: z.flattenError(parsed.error).fieldErrors });
   }
   const imageError = checkImages(req.files ?? []);
   if (imageError) return res.status(400).json({ error: imageError });
