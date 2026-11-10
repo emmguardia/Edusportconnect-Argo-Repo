@@ -18,7 +18,7 @@ Développé, hébergé et maintenu par [Zenix Web](https://zenixweb.fr).
 ## Structure
 
 ```
-Frontend/   application React (site public + back-office /admin)
+Frontend/   application React (site public + back-office)
 Backend/    API Express (événements, contact, authentification, admin)
   routes/     routes publiques et admin
   scripts/    migrations SQL et création du premier compte admin
