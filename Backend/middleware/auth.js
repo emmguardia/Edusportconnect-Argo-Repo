@@ -13,7 +13,7 @@ export function requireAdmin(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Non authentifié' });
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     req.admin = payload;
     next();
   } catch {

@@ -2,13 +2,17 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
 import { getPool } from '../config/database.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { loginLimiter } from '../config/security.js';
 
 const router = Router();
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+// Hash bcrypt valide (même coût que les vrais comptes) comparé quand l'email
+// n'existe pas : la réponse prend le même temps → impossible de deviner
+// les emails admin en mesurant le délai.
+const DUMMY_HASH = bcrypt.hashSync(randomBytes(16).toString('hex'), 12);
 
 const loginSchema = z.object({
   email:    z.string().email().max(254),
@@ -31,7 +35,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
   // Même délai si l'email n'existe pas (anti-timing attack)
   const admin = rows[0] ?? null;
-  const hash  = admin?.password ?? '$2b$12$invalidehashinvalidehashinvalide';
+  const hash  = admin?.password ?? DUMMY_HASH;
   const match = await bcrypt.compare(password, hash);
 
   if (!admin || !match) {
